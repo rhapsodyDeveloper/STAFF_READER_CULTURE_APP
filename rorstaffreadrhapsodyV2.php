@@ -231,14 +231,26 @@ for($i=0; $i < count($emailarr); $i++){
 		return $emailcommaseparated;
 	}
 	
-	function trim_str_val($strArray) {
+	function trim_str_val($strArray,$emailkey = "email") {
 		$trimmedEmails = Array();
 		foreach($strArray as $key=>$value)
 		{
-		    $trimmedEmails[] = trim($value["email"]);
+		    $trimmedEmails[] = trim($value[$emailkey]);
 	    }	
 		return $trimmedEmails; 
 	}
+	//require '[clojure.string/blank]
+	//(map (fn [string result] (if (blank? string) (//donothing) (conj result sring)) result) )	
+	function neglectEmptyString($thestring) {
+		$buffer = Array();
+		foreach($thestring as $key=>$value) {
+			if(!empty($value)){
+				$buffer[] = $value;
+			}
+		}
+		return $buffer ;
+	}
+	
 
 	$emailslist = comma_separated_email($data_store);
 	if(($lastcomma =strripos($emailslist,",")) != FALSE){
@@ -296,18 +308,26 @@ for($i=0; $i < count($emailarr); $i++){
 	$trimmedEmails = Array();
 	$trimmedEmails = trim_str_val($userdb->fetchall($myselectEmail));
 	
-	//(map (fn [coll result] (if (notEpmty?) (conj result s)) result) )	
-	function neglectEmptyString($thestring) {
-		$buffer = Array();
-		foreach($thestring as $key=>$value) {
-			if(!empty($value)){
-				$buffer[] = $value;
-			}
-		}
-		return $buffer ;
-	}
+	
+	$trimmedEmails2 = Array();
+	$trimmedEmails2 = trim_str_val($userdb->fetchall($staffSelectAltEmail),"alt_email");
+
+	
 	
 	$only_str_with_val = neglectEmptyString($trimmedEmails);
+	
+	function split_rows_with_multiple_emails ($theString,$pattern = "/[,;]+/") {
+			$result = preg_split($pattern,$theString);
+			return $result;
+	}
+	
+	$only_str_with_val2 = neglectEmptyString($trimmedEmails2);
+	$finaloutputfor2 = array_map("split_rows_with_multiple_emails",$only_str_with_val2);
+	
+	
+
+	
+	
 	
 	$staff_email_in_db = 'select * from staff_dept_email where email in (select email from users where email not like " ") or alt_email in (select email from users where email not like " ") order by dept desc ;';
 	
@@ -334,7 +354,7 @@ for($i=0; $i < count($emailarr); $i++){
 	header("Access-Control-Allow-Origin: *");
 	//echo json_encode($user);
 	
-	echo json_encode($only_str_with_val);
+	echo json_encode($finaloutputfor2);
 
 	unset($staffdb);
 	unset($commentdb);

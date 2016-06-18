@@ -239,11 +239,14 @@ for($i=0; $i < count($emailarr); $i++){
 	    }	
 		return $trimmedEmails; 
 	}
+	function trim_str_val_row($the_arr_row,$emailkey = "email") {
+		return trim($the_arr_row[$emailkey]);
+	}
 	//require '[clojure.string/blank]
 	//(map (fn [string result] (if (blank? string) (//donothing) (conj result sring)) result) )	
-	function neglectEmptyString($thestring) {
+	function neglectEmptyString($thestringArray) {
 		$buffer = Array();
-		foreach($thestring as $key=>$value) {
+		foreach($thestringArray as $key=>$value) {
 			if(!empty($value)){
 				$buffer[] = $value;
 			}
@@ -322,7 +325,55 @@ for($i=0; $i < count($emailarr); $i++){
 	}
 	
 	$only_str_with_val2 = neglectEmptyString($trimmedEmails2);
+	$finalout1 = array_map("split_rows_with_multiple_emails" ,$only_str_with_val);
 	$finaloutputfor2 = array_map("split_rows_with_multiple_emails",$only_str_with_val2);
+	$sqlforallobjects = 'select * from staff_dept_email';
+
+	//$userdb-> fetchall($sqlforallobjects);
+	$all_object_arr_for_email_col = $userdb->fetchall($sqlforallobjects) ;
+	$processed_email = Array();
+	$just_count = 0;
+		foreach($all_object_arr_for_email_col as $key=>$value) {
+			$theemail = trim_str_val_row($value);
+			if (!empty($theemail)) {
+					$theemail = split_rows_with_multiple_emails ($theemail,$pattern = "/[,;]+/") ;
+					$processed_email[$just_count]["email"] = $theemail;	
+					$processed_email[$just_count]["first_name"] = $value["first_name"];
+					$processed_email[$just_count]["last_name"] = $value["last_name"];	
+					$processed_email[$just_count]["dept"] = $value["dept"];	
+					
+					if(!empty($value["alt_email"])){
+							$processed_email[$just_count]["alt_email"] = (split_rows_with_multiple_emails ((trim_str_val_row($value,"alt_email")),$pattern = "/[,;]+/"));	
+					}
+
+
+
+			}else {
+				$theemail = trim_str_val_row($value,"alt_email");
+				if(!empty($theemail)) {
+					$theemail = split_rows_with_multiple_emails ($theemail,$pattern = "/[,;]+/") ;
+					$processed_email[$just_count]["alt_email"] = $theemail;	
+					$processed_email[$just_count]["first_name"] = $value["first_name"];
+					$processed_email[$just_count]["last_name"] = $value["last_name"];	
+					$processed_email[$just_count]["dept"] = $value["dept"];
+
+				}
+			}
+			//$user_id = get_user_id($where_clause);
+			//$comment_arr_for_user = get_user_comment_for_id($user_id);
+			//$merged = merge_dept_with_user_comment($comment_arr_for_user);
+			//$desired_entity[] = $merged;
+			
+			
+				$just_count++;
+			
+		}
+	
+	//foreach(objectreturnedbydbselect) {
+		//select used_id from users where email = userdb->email
+		//getuseridforemail(emailval)
+		//select c.created , c.book_id,c.chapternum,c.description from comments c where user_id = obj->id and created = $todayformat	
+	//}
 	
 	
 
@@ -354,7 +405,7 @@ for($i=0; $i < count($emailarr); $i++){
 	header("Access-Control-Allow-Origin: *");
 	//echo json_encode($user);
 	
-	echo json_encode($finaloutputfor2);
+	echo json_encode($processed_email);
 
 	unset($staffdb);
 	unset($commentdb);

@@ -490,15 +490,15 @@ for($i=0; $i < count($emailarr); $i++){
 				    $sql_user_comment = 'select c.book_id,c.chapter_number,c.description,c.created from comments c where c.user_id = "'.$userRow->id.'" AND created >= "'.$today_format.'";';
 			$user_comment_object = $commentdb->getRow($sql_user_comment,true);
 			if($user_comment_object){
-				$testval[$anothercount]['bookid'] = $user_comment_object->book_id;
-				$testval[$anothercount]['chapternumber'] = $user_comment_object->chapter_number;
-				$testval[$anothercount]['commenttext'] = $user_comment_object->description;
+				$testval[$anothercount]['alt_bookid'] = $user_comment_object->book_id;
+				$testval[$anothercount]['alt_chapternumber'] = $user_comment_object->chapter_number;
+				$testval[$anothercount]['alt_commenttext'] = $user_comment_object->description;
 				$comment_date = date($user_comment_object->created);
-				$testval[$anothercount]['commentdate'] = $comment_date;
+				$testval[$anothercount]['alt_commentdate'] = $comment_date;
 			}else {
-				$testval[$anothercount]['bookid'] = "none";
-				$testval[$anothercount]['chapternumber'] = "none";
-				$testval[$anothercount]['commenttext'] = "none";
+				$testval[$anothercount]['alt_bookid'] = "none";
+				$testval[$anothercount]['alt_chapternumber'] = "none";
+				$testval[$anothercount]['alt_commenttext'] = "none";
 				
 				
 			}
@@ -542,15 +542,15 @@ for($i=0; $i < count($emailarr); $i++){
 				    $sql_user_comment = 'select c.book_id,c.chapter_number,c.description,c.created from comments c where c.user_id = "'.$userRow->id.'" AND created >= "'.$today_format.'";';
 			$user_comment_object = $commentdb->getRow($sql_user_comment,true);
 			if($user_comment_object){
-				$testval[$anothercount]['bookid'] = $user_comment_object->book_id;
-				$testval[$anothercount]['chapternumber'] = $user_comment_object->chapter_number;
-				$testval[$anothercount]['commenttext'] = $user_comment_object->description;
+				$testval[$anothercount]['alt_bookid'] = $user_comment_object->book_id;
+				$testval[$anothercount]['alt_chapternumber'] = $user_comment_object->chapter_number;
+				$testval[$anothercount]['alt_commenttext'] = $user_comment_object->description;
 				$comment_date = date($user_comment_object->created);
-				$testval[$anothercount]['commentdate'] = $comment_date;
+				$testval[$anothercount]['alt_commentdate'] = $comment_date;
 			}else {
-				$testval[$anothercount]['bookid'] = "none";
-				$testval[$anothercount]['chapternumber'] = "none";
-				$testval[$anothercount]['commenttext'] = "none";
+				$testval[$anothercount]['alt_bookid'] = "none";
+				$testval[$anothercount]['alt_chapternumber'] = "none";
+				$testval[$anothercount]['alt_commenttext'] = "none";
 				
 				
 			}

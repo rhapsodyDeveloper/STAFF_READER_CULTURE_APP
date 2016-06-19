@@ -327,53 +327,250 @@ for($i=0; $i < count($emailarr); $i++){
 	$only_str_with_val2 = neglectEmptyString($trimmedEmails2);
 	$finalout1 = array_map("split_rows_with_multiple_emails" ,$only_str_with_val);
 	$finaloutputfor2 = array_map("split_rows_with_multiple_emails",$only_str_with_val2);
-	$sqlforallobjects = 'select * from staff_dept_email';
-
-	//$userdb-> fetchall($sqlforallobjects);
-	$all_object_arr_for_email_col = $userdb->fetchall($sqlforallobjects) ;
-	$processed_email = Array();
-	$just_count = 0;
-		foreach($all_object_arr_for_email_col as $key=>$value) {
-			$theemail = trim_str_val_row($value);
-			if (!empty($theemail)) {
-					$theemail = split_rows_with_multiple_emails ($theemail,$pattern = "/[,;]+/") ;
-					$processed_email[$just_count]["email"] = $theemail;	
-					$processed_email[$just_count]["first_name"] = $value["first_name"];
-					$processed_email[$just_count]["last_name"] = $value["last_name"];	
-					$processed_email[$just_count]["dept"] = $value["dept"];	
-					
-					if(!empty($value["alt_email"])){
-							$processed_email[$just_count]["alt_email"] = (split_rows_with_multiple_emails ((trim_str_val_row($value,"alt_email")),$pattern = "/[,;]+/"));	
-					}
-
-
-
-			}else {
-				$theemail = trim_str_val_row($value,"alt_email");
-				if(!empty($theemail)) {
-					$theemail = split_rows_with_multiple_emails ($theemail,$pattern = "/[,;]+/") ;
-					$processed_email[$just_count]["alt_email"] = $theemail;	
-					$processed_email[$just_count]["first_name"] = $value["first_name"];
-					$processed_email[$just_count]["last_name"] = $value["last_name"];	
-					$processed_email[$just_count]["dept"] = $value["dept"];
-
-				}
-			}
-			//$user_id = get_user_id($where_clause);
-			//$comment_arr_for_user = get_user_comment_for_id($user_id);
-			//$merged = merge_dept_with_user_comment($comment_arr_for_user);
-			//$desired_entity[] = $merged;
-			
-			
-				$just_count++;
-			
-		}
 	
+	function processsStaffEmails() {
+		$userdb = new NicDatabase();
+		$sqlforallobjects = 'select * from staff_dept_email';
+
+		//$userdb-> fetchall($sqlforallobjects);
+		$all_object_arr_for_email_col = $userdb->fetchall($sqlforallobjects) ;
+		$processed_email = Array();
+		$just_count = 0;
+			foreach($all_object_arr_for_email_col as $key=>$value) {
+				$theemail = trim_str_val_row($value);
+				if (!empty($theemail)) {
+						$theemail = split_rows_with_multiple_emails ($theemail,$pattern = "/[,;]+/") ;
+						$processed_email[$just_count]["email"] = $theemail;	
+						$processed_email[$just_count]["first_name"] = $value["first_name"];
+						$processed_email[$just_count]["last_name"] = $value["last_name"];	
+						$processed_email[$just_count]["dept"] = $value["dept"];	
+					
+						if(!empty($value["alt_email"])){
+								$processed_email[$just_count]["alt_email"] = (split_rows_with_multiple_emails ((trim_str_val_row($value,"alt_email")),$pattern = "/[,;]+/"));	
+						}
+
+
+
+				}else {
+					$theemail = trim_str_val_row($value,"alt_email");
+					if(!empty($theemail)) {
+						$theemail = split_rows_with_multiple_emails ($theemail,$pattern = "/[,;]+/") ;
+						$processed_email[$just_count]["alt_email"] = $theemail;	
+						$processed_email[$just_count]["first_name"] = $value["first_name"];
+						$processed_email[$just_count]["last_name"] = $value["last_name"];	
+						$processed_email[$just_count]["dept"] = $value["dept"];
+
+					}
+				}
+				//$user_id = get_user_id($where_clause);
+				//$comment_arr_for_user = get_user_comment_for_id($user_id);
+				//$merged = merge_dept_with_user_comment($comment_arr_for_user);
+				//$desired_entity[] = $merged;
+			
+			
+					$just_count++;
+			
+			}
+			unset($userdb);
+	
+			return $processed_email;
+	}
+	
+	$processed_email = processsStaffEmails();
 	//foreach(objectreturnedbydbselect) {
 		//select used_id from users where email = userdb->email
 		//getuseridforemail(emailval)
 		//select c.created , c.book_id,c.chapternum,c.description from comments c where user_id = obj->id and created = $todayformat	
 	//}
+	$testval = Array();
+	$anothercount = 0;
+	$countinner = 0;
+	function get_user_id_from_main_db() {
+		
+	}
+	foreach($processed_email as $key=>$value) {
+		if(count($value["email"]) > 1) {
+			foreach($value["email"] as $key_2=>$value_2 ) {
+				$user_select = 'select u.id from users u where u.email ="'.trim($value_2).'"';
+				$userRow = $userdb->getRow($user_select,true);
+				if($userRow && $countinner < 1) {
+					$testval[$anothercount]["id"] = $userRow->id;
+					$testval[$anothercount]["email"] = trim($value_2);
+					$testval[$anothercount]["firstname"] = $value["first_name"];
+					$testval[$anothercount]["lname"] = $value["last_name"];
+					$testval[$anothercount]["dept"] = $value["dept"];
+					$sql_user_comment = 'select c.book_id,c.chapter_number,c.description,c.created from comments c where c.user_id = "'.$userRow->id.'" AND created >= "'.$today_format.'";';
+			$user_comment_object = $commentdb->getRow($sql_user_comment,true);
+			if($user_comment_object){
+				$testval[$anothercount]['bookid'] = $user_comment_object->book_id;
+				$testval[$anothercount]['chapternumber'] = $user_comment_object->chapter_number;
+				$testval[$anothercount]['commenttext'] = $user_comment_object->description;
+				$comment_date = date($user_comment_object->created);
+				$testval[$anothercount]['commentdate'] = $comment_date;
+			}else {
+				$testval[$anothercount]['bookid'] = "none";
+				$testval[$anothercount]['chapternumber'] = "none";
+				$testval[$anothercount]['commenttext'] = "none";
+				
+				
+			}
+
+
+					break;
+					
+				} else if ($userRow && $countinner >= 1)  {
+					$testval[$anothercount]["id"] = $userRow->id;
+					$testval[$anothercount]["email"] = trim($value_2);
+					$testval[$anothercount]["dept"] = $value["dept"];
+				    $sql_user_comment = 'select c.book_id,c.chapter_number,c.description,c.created from comments c where c.user_id = "'.$userRow->id.'" AND created >= "'.$today_format.'";';
+			$user_comment_object = $commentdb->getRow($sql_user_comment,true);
+			if($user_comment_object){
+				$testval[$anothercount]['bookid'] = $user_comment_object->book_id;
+				$testval[$anothercount]['chapternumber'] = $user_comment_object->chapter_number;
+				$testval[$anothercount]['commenttext'] = $user_comment_object->description;
+				$comment_date = date($user_comment_object->created);
+				$testval[$anothercount]['commentdate'] = $comment_date;
+			}else {
+				$testval[$anothercount]['bookid'] = "none";
+				$testval[$anothercount]['chapternumber'] = "none";
+				$testval[$anothercount]['commenttext'] = "none";
+				
+				
+			}
+
+					break;
+
+				}
+				$countinner++;
+ 			}
+			$countinner = 0;
+			
+		}else {
+				$user_select = 'select u.id from users u where u.email ="'.trim($value["email"][0]).'"';
+				$userRow = $userdb->getRow($user_select,true);
+				if($userRow) {
+					$testval[$anothercount]["id"] = $userRow->id;
+				    $testval[$anothercount]["email"] = trim($value["email"][0]);
+					$testval[$anothercount]["firstname"] = $value["first_name"];
+					$testval[$anothercount]["lname"] = $value["last_name"];
+					$testval[$anothercount]["dept"] = $value["dept"];
+					
+				    $sql_user_comment = 'select c.book_id,c.chapter_number,c.description,c.created from comments c where c.user_id = "'.$userRow->id.'" AND created >= "'.$today_format.'";';
+			$user_comment_object = $commentdb->getRow($sql_user_comment,true);
+			if($user_comment_object){
+				$testval[$anothercount]['bookid'] = $user_comment_object->book_id;
+				$testval[$anothercount]['chapternumber'] = $user_comment_object->chapter_number;
+				$testval[$anothercount]['commenttext'] = $user_comment_object->description;
+				$comment_date = date($user_comment_object->created);
+				$testval[$anothercount]['commentdate'] = $comment_date;
+			}else {
+				$testval[$anothercount]['bookid'] = "none";
+				$testval[$anothercount]['chapternumber'] = "none";
+				$testval[$anothercount]['commenttext'] = "none";
+				
+				
+			}
+
+
+				}
+		 
+
+		}
+		
+	if(count($value["alt_email"]) > 1) {
+			foreach($value["alt_email"] as $key_2=>$value_2 ) {
+				$user_select = 'select u.id from users u where u.email ="'.trim($value_2).'"';
+				$userRow = $userdb->getRow($user_select,true);
+				if($userRow && $countinner < 1) {
+					$testval[$anothercount]["id_alt"] = $userRow->id;
+					$testval[$anothercount]["alt_email"] = trim($value_2);
+					$testval[$anothercount]["firstname"] = $value["first_name"];
+					$testval[$anothercount]["lname"] = $value["last_name"];
+					$testval[$anothercount]["dept"] = $value["dept"];
+				    $sql_user_comment = 'select c.book_id,c.chapter_number,c.description,c.created from comments c where c.user_id = "'.$userRow->id.'" AND created >= "'.$today_format.'";';
+			$user_comment_object = $commentdb->getRow($sql_user_comment,true);
+			if($user_comment_object){
+				$testval[$anothercount]['bookid'] = $user_comment_object->book_id;
+				$testval[$anothercount]['chapternumber'] = $user_comment_object->chapter_number;
+				$testval[$anothercount]['commenttext'] = $user_comment_object->description;
+				$comment_date = date($user_comment_object->created);
+				$testval[$anothercount]['commentdate'] = $comment_date;
+			}else {
+				$testval[$anothercount]['bookid'] = "none";
+				$testval[$anothercount]['chapternumber'] = "none";
+				$testval[$anothercount]['commenttext'] = "none";
+				
+				
+			}
+					break;
+					
+				} else if ($userRow && $countinner >= 1)  {
+					$testval[$anothercount]["id_alt"] = $userRow->id;
+					$testval[$anothercount]["alt_email"] = trim($value_2);
+					$testval[$anothercount]["dept"] = $value["dept"];
+				    $sql_user_comment = 'select c.book_id,c.chapter_number,c.description,c.created from comments c where c.user_id = "'.$userRow->id.'" AND created >= "'.$today_format.'";';
+			$user_comment_object = $commentdb->getRow($sql_user_comment,true);
+			if($user_comment_object){
+				$testval[$anothercount]['bookid'] = $user_comment_object->book_id;
+				$testval[$anothercount]['chapternumber'] = $user_comment_object->chapter_number;
+				$testval[$anothercount]['commenttext'] = $user_comment_object->description;
+				$comment_date = date($user_comment_object->created);
+				$testval[$anothercount]['commentdate'] = $comment_date;
+			}else {
+				$testval[$anothercount]['bookid'] = "none";
+				$testval[$anothercount]['chapternumber'] = "none";
+				$testval[$anothercount]['commenttext'] = "none";
+				
+				
+			}
+					break;
+
+				}
+				$countinner++;
+ 			}
+			$countinner = 0;
+			
+		}else {
+				$user_select = 'select u.id from users u where u.email ="'.trim($value["alt_email"][0]).'"';
+				$userRow = $userdb->getRow($user_select,true);
+				if($userRow) {
+					$testval[$anothercount]["id_alt"] = $userRow->id;
+				    $testval[$anothercount]["alt_email"] = trim($value["alt_email"][0]);
+					$testval[$anothercount]["firstname"] = $value["first_name"];
+					$testval[$anothercount]["lname"] = $value["last_name"];
+					$testval[$anothercount]["dept"] = $value["dept"];
+				    $sql_user_comment = 'select c.book_id,c.chapter_number,c.description,c.created from comments c where c.user_id = "'.$userRow->id.'" AND created >= "'.$today_format.'";';
+			$user_comment_object = $commentdb->getRow($sql_user_comment,true);
+			if($user_comment_object){
+				$testval[$anothercount]['bookid'] = $user_comment_object->book_id;
+				$testval[$anothercount]['chapternumber'] = $user_comment_object->chapter_number;
+				$testval[$anothercount]['commenttext'] = $user_comment_object->description;
+				$comment_date = date($user_comment_object->created);
+				$testval[$anothercount]['commentdate'] = $comment_date;
+			}else {
+				$testval[$anothercount]['bookid'] = "none";
+				$testval[$anothercount]['chapternumber'] = "none";
+				$testval[$anothercount]['commenttext'] = "none";
+				
+				
+			}
+				}
+		 
+
+		}
+		
+
+		
+		
+		//endforeach
+	//	$user_select = 'select u.id from users u where u.email ="'.$value["email"][0].'"';
+	//	$userdbobj = $userdb->getRow($user_select,true);
+	//	$id = $userdbobj->id;
+		//$testval[] = $id;
+		$anothercount++;
+
+	}
+	
 	
 	
 
@@ -387,7 +584,7 @@ for($i=0; $i < count($emailarr); $i++){
 	$testarr = Array();
 	$testarr2 = Array();
 	foreach($myuserarr[0] as $key=>$value) {
-		$testarr[] = $value ;
+		$testarr[] = $key ;
 	}
 	
 	
@@ -405,7 +602,7 @@ for($i=0; $i < count($emailarr); $i++){
 	header("Access-Control-Allow-Origin: *");
 	//echo json_encode($user);
 	
-	echo json_encode($processed_email);
+	echo json_encode($testval);
 
 	unset($staffdb);
 	unset($commentdb);
